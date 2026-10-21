@@ -32,6 +32,11 @@
     window.parent.postMessage({ jsonrpc: "2.0", id, method, params }, "*");
     return new Promise((resolve) => pending.set(id, resolve));
   }
+
+  function applyHostStyles(ctx) {
+    const vars = ctx && ctx.styles && ctx.styles.variables;
+    if (vars) for (const [k, v] of Object.entries(vars)) document.documentElement.style.setProperty(k, v);
+  }
   function notify(method, params) { window.parent.postMessage({ jsonrpc: "2.0", method, params }, "*"); }
   function escape(text) { return String(text).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
   const WEEKDAY = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -61,7 +66,7 @@
     if (msg.method === "ui/notifications/tool-result" && msg.params) render(msg.params.structuredContent || {});
   });
   rpc("ui/initialize", { appInfo: { name: "ammas-hour-week", version: "0.1.0" }, appCapabilities: {}, protocolVersion: "2026-01-26" })
-    .then(() => notify("ui/notifications/initialized", {}));
+    .then((result) => { applyHostStyles(result && result.hostContext); notify("ui/notifications/initialized", {}); });
 </script>
 </body>
 </html>

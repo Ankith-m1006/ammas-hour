@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Amma's Hour: Alexa+ simulator</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #f6f1ea; --ink: #2b2118; --muted: #7a6a5c; --line: #e4d8c7; --card: #fffdf9;
@@ -100,6 +101,35 @@
   .facts span { font-size: 12px; background: #f6efe5; border-radius: 999px; padding: 3px 10px; color: var(--ink); }
   .linkish { border: 0; background: none; padding: 0; color: var(--accent); font-size: 13px; text-decoration: underline; text-underline-offset: 3px; justify-self: start; }
 
+
+  /* ---------- Optional Alexa-brand theme (?theme=alexa); the default look above is unchanged ---------- */
+  html[data-theme="alexa"] {
+    --bg: #eaeded; --ink: #0f1111; --muted: #565959; --line: #d5d9d9; --card: #ffffff;
+    --alexa: #00caff; --accent: #c45500; --ok: #067d62; --flag: #b12704;
+  }
+  html[data-theme="alexa"] body { font-family: "Inter", "Segoe UI", system-ui, sans-serif; }
+  html[data-theme="alexa"] header { background: #232f3e; color: #fff; padding: 14px 28px; margin-bottom: 14px; align-items: center; }
+  html[data-theme="alexa"] header h1 { font-size: 20px; font-weight: 700; }
+  html[data-theme="alexa"] header h1::before { content: ""; display: inline-block; width: 18px; height: 18px; border-radius: 50%; border: 3px solid var(--alexa); margin-right: 10px; vertical-align: -3px; box-shadow: 0 0 12px rgba(0,202,255,.6); }
+  html[data-theme="alexa"] header .tag { color: #c6cdd6; }
+  html[data-theme="alexa"] .device { background: #0b0d10; border-radius: 22px; box-shadow: 0 18px 40px rgba(15,17,17,.25); }
+  html[data-theme="alexa"] .screen { background: linear-gradient(160deg, #13253a 0%, #0c1726 70%, #0a1320 100%); }
+  html[data-theme="alexa"] .ring { height: 7px; }
+  html[data-theme="alexa"] .ring.listening { background: linear-gradient(90deg, #0067b8, var(--alexa), #0067b8); }
+  html[data-theme="alexa"] button { border-radius: 8px; border-color: #d5d9d9; background: #fff; box-shadow: 0 2px 5px rgba(213,217,217,.5); }
+  html[data-theme="alexa"] button.primary { background: var(--alexa); border-color: #00b3e3; color: #0f1111; border-radius: 999px; box-shadow: 0 0 0 4px rgba(0,202,255,.18); }
+  html[data-theme="alexa"] .lang button.on { background: #232f3e; border-color: #232f3e; color: #fff; }
+  html[data-theme="alexa"] input[type=text] { border-radius: 8px; border-color: #888c8c; box-shadow: 0 1px 2px rgba(15,17,17,.15) inset; }
+  html[data-theme="alexa"] .chips button { background: #fff; border-color: #d5d9d9; color: #0f1111; border-radius: 999px; }
+  html[data-theme="alexa"] .chips button::before { background: var(--alexa); box-shadow: 0 0 0 3px rgba(0,202,255,.22); }
+  html[data-theme="alexa"] .panel { border-radius: 12px; border-color: #d5d9d9; box-shadow: 0 2px 5px rgba(15,17,17,.08); }
+  html[data-theme="alexa"] .panel h2 { color: #232f3e; }
+  html[data-theme="alexa"] .count, html[data-theme="alexa"] .facts span { background: #f0f2f2; }
+  html[data-theme="alexa"] .handset-screen { background: linear-gradient(180deg, #f7fafa, #eef3f6); }
+  html[data-theme="alexa"] .app-icon { background: linear-gradient(140deg, #00caff, #0067b8); }
+  html[data-theme="alexa"] .turn-head { background: #f7fafa; }
+  html[data-theme="alexa"] .linkish { color: #007185; }
+
   /* ---------- Responsive ---------- */
   @media (max-width: 1100px) {
     main { grid-template-columns: 1fr; }
@@ -175,6 +205,12 @@
 </main>
 <script>
 const MCP_URL = "/mcp";
+// Optional look (?theme=alexa); the cards get the matching palette through hostContext.styles (MCP Apps).
+const THEME = new URLSearchParams(location.search).get("theme") === "alexa" ? "alexa" : "original";
+document.documentElement.dataset.theme = THEME;
+const CARD_STYLES = THEME === "alexa"
+  ? { "--paper": "#ffffff", "--ink": "#0f1111", "--muted": "#565959", "--line": "#d5d9d9", "--ok": "#067d62", "--due": "#c45500", "--bar": "#00a8e1", "--miss": "#e3f4fa" }
+  : {};
 const MCP_APP_MIME = "text/html;profile=mcp-app";
 const $ = (id) => document.getElementById(id);
 let sessionId = null, protocolVersion = null, nextId = 1, tools = [], lang = "hi-IN";
@@ -269,7 +305,7 @@ async function showApp(resourceUri, toolResult) {
         protocolVersion: "2026-01-26",
         hostInfo: { name: "ammas-hour-echo-show-simulator", version: "0.1.0" },
         hostCapabilities: {},
-        hostContext: { theme: "light", displayMode: $("device").classList.contains("small") || matchMedia("(max-width: 720px)").matches ? "inline" : "fullscreen", locale: lang },
+        hostContext: { styles: { variables: CARD_STYLES }, theme: "light", displayMode: $("device").classList.contains("small") || matchMedia("(max-width: 720px)").matches ? "inline" : "fullscreen", locale: lang },
       } }, "*");
     } else if (msg?.method === "ui/notifications/size-changed" && msg.params?.height && matchMedia("(max-width: 720px)").matches) {
       box.style.height = `${Math.ceil(msg.params.height) + 4}px`;
