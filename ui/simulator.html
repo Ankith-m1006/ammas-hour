@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Amma's Hour: Alexa+ simulator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Manrope:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #f6f1ea; --ink: #2b2118; --muted: #7a6a5c; --line: #e4d8c7; --card: #fffdf9;
@@ -45,7 +46,7 @@
   section { min-width: 0; }
   .panel { min-width: 0; overflow: hidden; background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 14px 16px; }
   .panel h2 { margin: 0 0 10px; font-size: 15px; letter-spacing: .3px; text-transform: uppercase; color: var(--muted); }
-  .phone { background: #fbfaf8; border-radius: 22px; border: 1px solid var(--line); padding: 10px; min-height: 120px; }
+  .phone { background: #fbfaf8; border-radius: 22px; border: 1px solid var(--line); padding: 10px; min-height: 120px; max-height: 280px; overflow: auto; }
   .notif { background: #fff; border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 12px; padding: 9px 11px; margin-bottom: 8px; font-size: 14px; overflow-wrap: anywhere; animation: drop .3s ease-out; }
   .notif.flag { border-left-color: var(--flag); }
   .notif.order { border-left-color: var(--ok); }
@@ -57,12 +58,83 @@
   .log .out { color: #0a6fd6; } .log .in { color: var(--ok); } .log .err { color: var(--flag); }
   .meta { font-size: 13px; color: var(--muted); line-height: 1.5; }
   @media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
+
+  /* ---------- Design switcher ---------- */
+  .designs { margin-left: auto; display: flex; gap: 6px; align-items: center; font-size: 13px; color: var(--muted); }
+  .designs button { font-size: 13px; padding: 6px 12px; }
+  .designs button.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+
+  /* ---------- Design B: Ghar (warm home) ---------- */
+  html[data-design="ghar"] {
+    --bg: #f7efe3; --ink: #2a1d14; --muted: #8a735f; --line: #ead9c3; --card: #fffaf2;
+    --alexa: #18a7e8; --accent: #c2562a; --ok: #3f7d4e; --flag: #b8352a;
+  }
+  html[data-design="ghar"] body { font-family: "Manrope", system-ui, sans-serif;
+    background: radial-gradient(1200px 600px at 10% -10%, #fff7ea 0%, transparent 60%), radial-gradient(900px 500px at 110% 10%, #f3e1c9 0%, transparent 55%), var(--bg); }
+  html[data-design="ghar"] header h1 { font-family: "Fraunces", Georgia, serif; font-size: 30px; font-weight: 700; color: #5a2d16; }
+  html[data-design="ghar"] .device { background: linear-gradient(180deg, #3a302b, #241d19); border-radius: 30px; padding: 16px 16px 30px;
+    box-shadow: 0 1px 0 #5a4b42 inset, 0 24px 48px rgba(90, 45, 22, .22); position: relative; }
+  html[data-design="ghar"] .device::after { content: ""; position: absolute; left: 22%; right: 22%; bottom: 10px; height: 8px; border-radius: 4px;
+    background: repeating-linear-gradient(90deg, #4c403a 0 3px, #3a302b 3px 6px); }
+  html[data-design="ghar"] .screen { background: linear-gradient(165deg, #20394a 0%, #1b2b3a 55%, #2a2235 100%); border-radius: 14px; }
+  html[data-design="ghar"] .reply { font-family: "Fraunces", Georgia, serif; font-weight: 500; font-size: 25px; }
+  html[data-design="ghar"] .reply .heard { font-family: "Manrope", sans-serif; }
+  html[data-design="ghar"] .app { border-radius: 14px; box-shadow: 0 10px 30px rgba(0,0,0,.25); }
+  html[data-design="ghar"] .panel { border-radius: 20px; box-shadow: 0 6px 20px rgba(90, 45, 22, .07); }
+  html[data-design="ghar"] .panel h2 { font-family: "Fraunces", Georgia, serif; text-transform: none; letter-spacing: 0; font-size: 18px; color: #5a2d16; }
+  html[data-design="ghar"] button { border-radius: 14px; box-shadow: 0 2px 0 rgba(90,45,22,.08); }
+  html[data-design="ghar"] button.primary { background: linear-gradient(180deg, #2bb5f2, #128fd0); border: 0; }
+  html[data-design="ghar"] .chips button { background: #fff3e2; border-color: #efd8b8; color: #6b3a1c; }
+  html[data-design="ghar"] .phone { background: linear-gradient(180deg, #fffdf9, #fbf3e7); border-radius: 26px; }
+
+  /* ---------- Design C: Clinic Calm (white, crisp) ---------- */
+  html[data-design="clinic"] {
+    --bg: #f5f8f8; --ink: #0f2a2e; --muted: #5d7377; --line: #dfe8e9; --card: #ffffff;
+    --alexa: #0ea5b7; --accent: #0e8a74; --ok: #0e8a74; --flag: #d1453b;
+  }
+  html[data-design="clinic"] body { font-family: "Plus Jakarta Sans", system-ui, sans-serif; background: linear-gradient(180deg, #ffffff 0%, var(--bg) 60%); }
+  html[data-design="clinic"] header h1 { font-weight: 700; font-size: 26px; }
+  html[data-design="clinic"] header h1::before { content: ""; display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: var(--alexa); margin-right: 10px; vertical-align: 2px; box-shadow: 0 0 0 5px rgba(14,165,183,.15); }
+  html[data-design="clinic"] .device { background: #e9eef0; border-radius: 28px; padding: 14px; box-shadow: 0 0 0 1px #d7e0e2, 0 20px 40px rgba(15,42,46,.10); }
+  html[data-design="clinic"] .screen { background: #ffffff; color: var(--ink); border-radius: 16px; border: 1px solid #e6eeef; }
+  html[data-design="clinic"] .status { opacity: .7; }
+  html[data-design="clinic"] .reply { font-size: 24px; font-weight: 600; }
+  html[data-design="clinic"] .reply .heard { color: var(--alexa); opacity: 1; font-style: normal; font-weight: 500; }
+  html[data-design="clinic"] .app { border: 1px solid #e6eeef; border-radius: 16px; }
+  html[data-design="clinic"] .panel { border-radius: 18px; box-shadow: 0 1px 2px rgba(15,42,46,.04); }
+  html[data-design="clinic"] .panel h2 { color: var(--alexa); letter-spacing: .6px; font-size: 12px; }
+  html[data-design="clinic"] button { border-radius: 12px; }
+  html[data-design="clinic"] button.primary { background: var(--alexa); border-color: var(--alexa); }
+  html[data-design="clinic"] .chips button { background: #f0f8f9; border-color: #d4ecef; color: #0b5d68; }
+  html[data-design="clinic"] .phone { background: #f7fafa; }
+
+  /* ---------- Design D: Night Glow (Alexa at night) ---------- */
+  html[data-design="glow"] {
+    --bg: #0f1218; --ink: #eef2f7; --muted: #8e99a8; --line: #232a35; --card: #161b23;
+    --alexa: #38c6ff; --accent: #ffb454; --ok: #4fd18b; --flag: #ff6b6b;
+  }
+  html[data-design="glow"] body { font-family: "Manrope", system-ui, sans-serif; background: radial-gradient(900px 500px at 30% 0%, #18263a 0%, transparent 60%), var(--bg); }
+  html[data-design="glow"] header h1 { font-size: 26px; background: linear-gradient(90deg, #ffffff, var(--alexa)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  html[data-design="glow"] .device { background: #05070a; border-radius: 28px; box-shadow: 0 0 0 1px #1d2430, 0 0 60px rgba(56,198,255,.12); }
+  html[data-design="glow"] .screen { background: radial-gradient(800px 400px at 50% 120%, rgba(56,198,255,.20), transparent 60%), #0a0e14; }
+  html[data-design="glow"] .ring { height: 8px; }
+  html[data-design="glow"] .app { border-radius: 14px; }
+  html[data-design="glow"] .panel { border-color: var(--line); }
+  html[data-design="glow"] button { background: #1a2029; border-color: #2a3240; color: var(--ink); }
+  html[data-design="glow"] button.primary { background: var(--alexa); color: #04121b; border-color: var(--alexa); box-shadow: 0 0 20px rgba(56,198,255,.35); }
+  html[data-design="glow"] input[type=text] { background: #11161d; color: var(--ink); border-color: #2a3240; }
+  html[data-design="glow"] .phone { background: #0f141b; border-color: var(--line); }
+  html[data-design="glow"] .notif { background: #161c25; border-color: #263040; color: var(--ink); }
+  html[data-design="glow"] .lang button.on, html[data-design="glow"] .designs button.on { background: var(--alexa); color: #04121b; }
 </style>
 </head>
 <body>
 <header>
   <h1>Amma's Hour</h1>
   <span class="tag">Alexa+ add-on simulator · real MCP client (Streamable HTTP, 2025-11-25)</span>
+  <span class="designs" id="designs">Design:
+    <button data-design="original">Original</button><button data-design="ghar">Ghar</button><button data-design="clinic">Clinic Calm</button><button data-design="glow">Night Glow</button>
+  </span>
 </header>
 <main>
   <section>
@@ -148,8 +220,26 @@ async function connect() {
   $("meta").innerHTML = `Connected to <b>${init.serverInfo.title || init.serverInfo.name}</b> · protocol ${init.protocolVersion} · session ${sessionId.slice(0, 8)}… · ${tools.length} tools`;
 }
 
+// ---------- Designs ----------
+const CARD_STYLES = {
+  original: {},
+  ghar: { "--paper": "#fffaf2", "--ink": "#2a1d14", "--muted": "#8a735f", "--line": "#ead9c3", "--ok": "#3f7d4e", "--due": "#c2562a", "--bar": "#3f7d4e", "--miss": "#f2dfc6", "--title-font": "Fraunces, Georgia, serif" },
+  clinic: { "--paper": "#ffffff", "--ink": "#0f2a2e", "--muted": "#5d7377", "--line": "#e3ecee", "--ok": "#0e8a74", "--due": "#0b7f91", "--bar": "#0ea5b7", "--miss": "#e3f1f3", "--title-font": "Plus Jakarta Sans, sans-serif" },
+  glow: { "--paper": "#121821", "--ink": "#eef2f7", "--muted": "#8e99a8", "--line": "#263040", "--ok": "#4fd18b", "--due": "#ffb454", "--bar": "#38c6ff", "--miss": "#1d2734", "--row": "#18202b", "--title-font": "Manrope, sans-serif" },
+};
+let design = new URLSearchParams(location.search).get("design") || "original";
+function applyDesign(name) {
+  design = CARD_STYLES[name] ? name : "original";
+  document.documentElement.dataset.design = design;
+  document.querySelectorAll(".designs button").forEach((b) => b.classList.toggle("on", b.dataset.design === design));
+  const url = new URL(location.href); url.searchParams.set("design", design); history.replaceState(null, "", url);
+  if (lastCard) showApp(lastCard.uri, lastCard.result);
+}
+let lastCard = null;
+
 // ---------- MCP Apps host (SEP-1865) ----------
 async function showApp(resourceUri, toolResult) {
+  lastCard = { uri: resourceUri, result: toolResult };
   const res = await mcp("resources/read", { uri: resourceUri });
   const content = res.contents.find((c) => c.mimeType === MCP_APP_MIME);
   if (!content) return;
@@ -168,7 +258,8 @@ async function showApp(resourceUri, toolResult) {
         protocolVersion: "2026-01-26",
         hostInfo: { name: "ammas-hour-echo-show-simulator", version: "0.1.0" },
         hostCapabilities: {},
-        hostContext: { theme: "light", displayMode: $("device").classList.contains("small") ? "inline" : "fullscreen", locale: lang },
+        hostContext: { theme: design === "glow" ? "dark" : "light", displayMode: $("device").classList.contains("small") ? "inline" : "fullscreen", locale: lang,
+          styles: { variables: CARD_STYLES[design] } },
       } }, "*");
     } else if (msg?.method === "ui/notifications/initialized") {
       frame.contentWindow.postMessage({ jsonrpc: "2.0", method: "ui/notifications/tool-result", params: toolResult }, "*");
@@ -266,7 +357,7 @@ async function refreshPhone() {
   $("phone").innerHTML = items.map((n) => `<div class="notif ${n.cls}">${escapeHtml(n.text)}<small>${new Date(n.at).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</small></div>`).join("");
   const fresh = items.filter((n) => !seenNotifs.has(n.key));
   fresh.forEach((n) => seenNotifs.add(n.key));
-  if (fresh.length && navigator.vibrate) navigator.vibrate(150);
+  if (fresh.length && navigator.vibrate && navigator.userActivation?.hasBeenActive) navigator.vibrate(150);
 }
 
 // ---------- Wiring ----------
@@ -297,6 +388,7 @@ $("reset").onclick = async () => {
   await fetch("/demo/reset", { method: "POST" });
   seenNotifs.clear();
   Object.keys(context).forEach((k) => delete context[k]);
+  lastCard = null;
   $("app").style.display = "none";
   setReply("", "Demo data reset.");
   refreshPhone();
@@ -304,6 +396,8 @@ $("reset").onclick = async () => {
 setInterval(() => { $("clock").textContent = new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Kolkata" }); }, 1000);
 speechSynthesis?.getVoices();
 renderChips();
+document.querySelectorAll(".designs button").forEach((b) => b.onclick = () => applyDesign(b.dataset.design));
+applyDesign(design);
 connect().then(refreshPhone).catch((e) => { $("meta").textContent = `Could not connect: ${e.message}`; });
 </script>
 </body>
