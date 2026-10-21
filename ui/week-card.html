@@ -3,7 +3,6 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Manrope:wght@400;600&family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 <title>Amma's Hour: week</title>
 <style>
   :root { --ink: #2b2118; --muted: #7a6a5c; --paper: #fff9f0; --line: #eadfce; --bar: #2f7d4f; --miss: #f0d9c4; --flag: #c0392b; }
@@ -33,14 +32,6 @@
     window.parent.postMessage({ jsonrpc: "2.0", id, method, params }, "*");
     return new Promise((resolve) => pending.set(id, resolve));
   }
-
-  function applyHostStyles(ctx) {
-    const vars = ctx && ctx.styles && ctx.styles.variables;
-    if (!vars) return;
-    for (const [k, v] of Object.entries(vars)) document.documentElement.style.setProperty(k, v);
-    if (vars["--title-font"]) document.querySelectorAll("h1").forEach((h) => h.style.fontFamily = vars["--title-font"]);
-    document.body.style.fontFamily = vars["--title-font"] && !vars["--title-font"].includes("Fraunces") ? vars["--title-font"] : "";
-  }
   function notify(method, params) { window.parent.postMessage({ jsonrpc: "2.0", method, params }, "*"); }
   function escape(text) { return String(text).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
   const WEEKDAY = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -67,10 +58,10 @@
     const msg = event.data;
     if (!msg || msg.jsonrpc !== "2.0") return;
     if (msg.id !== undefined && pending.has(msg.id)) { pending.get(msg.id)(msg.result); pending.delete(msg.id); return; }
-    if (msg.method === "ui/notifications/tool-result" && msg.params) { render(msg.params.structuredContent || {}); applyHostStyles(window.__hostCtx); }
+    if (msg.method === "ui/notifications/tool-result" && msg.params) render(msg.params.structuredContent || {});
   });
   rpc("ui/initialize", { appInfo: { name: "ammas-hour-week", version: "0.1.0" }, appCapabilities: {}, protocolVersion: "2026-01-26" })
-    .then((result) => { window.__hostCtx = result && result.hostContext; applyHostStyles(window.__hostCtx); notify("ui/notifications/initialized", {}); });
+    .then(() => notify("ui/notifications/initialized", {}));
 </script>
 </body>
 </html>

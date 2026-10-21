@@ -48,6 +48,9 @@ export function routeWithRules(utterance: string, context: Context): Plan {
     if (context.pendingOrderId && has(said, NO)) {
         return {calls: [{name: "confirm_order", arguments: {order_id: context.pendingOrderId, confirmed: false}}], via: "rules"};
     }
+    if (!context.pendingOrderId && has(said, YES) && !has(said, ["telma", "ecosprin", "glycomet", "atorva", "tablet", "dawai"])) {
+        return {calls: [], say: "There's no order waiting. Which medicine should I order?", via: "rules"};
+    }
     if (has(said, WEEK)) {
         return {calls: [{name: "weekly_summary", arguments: {}}], via: "rules"};
     }

@@ -3,7 +3,6 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Manrope:wght@400;600&family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 <title>Amma's Hour: doses</title>
 <style>
   :root { --ink: #2b2118; --muted: #7a6a5c; --paper: #fff9f0; --line: #eadfce; --ok: #2f7d4f; --due: #b4541a; }
@@ -13,7 +12,7 @@
   h1 { font-size: 20px; margin: 0 0 4px; }
   .sub { color: var(--muted); font-size: 14px; margin-bottom: 14px; }
   ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
-  li { display: grid; grid-template-columns: 52px 1fr auto; gap: 14px; align-items: center; border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; background: var(--row, #fff); }
+  li { display: grid; grid-template-columns: 52px 1fr auto; gap: 14px; align-items: center; background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; }
   .pill { width: 44px; height: 26px; border-radius: 13px; border: 1px solid rgba(0,0,0,.12); }
   .name { font-size: 18px; font-weight: 600; }
   .how { color: var(--muted); font-size: 14px; }
@@ -35,14 +34,6 @@
     const id = nextId++;
     window.parent.postMessage({ jsonrpc: "2.0", id, method, params }, "*");
     return new Promise((resolve) => pending.set(id, resolve));
-  }
-
-  function applyHostStyles(ctx) {
-    const vars = ctx && ctx.styles && ctx.styles.variables;
-    if (!vars) return;
-    for (const [k, v] of Object.entries(vars)) document.documentElement.style.setProperty(k, v);
-    if (vars["--title-font"]) document.querySelectorAll("h1").forEach((h) => h.style.fontFamily = vars["--title-font"]);
-    document.body.style.fontFamily = vars["--title-font"] && !vars["--title-font"].includes("Fraunces") ? vars["--title-font"] : "";
   }
   function notify(method, params) { window.parent.postMessage({ jsonrpc: "2.0", method, params }, "*"); }
   function colourOf(looks) {
@@ -79,7 +70,6 @@
     }
     if (msg.method === "ui/notifications/tool-result" && msg.params) {
       render(msg.params.structuredContent || {});
-      if (window.__hostCtx) applyHostStyles(window.__hostCtx);
     }
     if (msg.method === "ui/notifications/host-context-changed" && msg.params) {
       document.body.classList.toggle("large", msg.params.displayMode === "fullscreen");
@@ -88,7 +78,6 @@
 
   rpc("ui/initialize", { appInfo: { name: "ammas-hour-doses", version: "0.1.0" }, appCapabilities: {}, protocolVersion: "2026-01-26" })
     .then((result) => {
-      window.__hostCtx = result && result.hostContext; applyHostStyles(window.__hostCtx);
       document.body.classList.toggle("large", result && result.hostContext && result.hostContext.displayMode === "fullscreen");
       notify("ui/notifications/initialized", {});
     });
