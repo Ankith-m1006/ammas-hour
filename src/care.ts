@@ -41,7 +41,7 @@ function normalise(text: string): string {
     return text.toLowerCase().normalize("NFKD").replace(/[^a-z0-9ऀ-ॿ ]+/g, " ").replace(/\s+/g, " ").trim();
 }
 
-// Matches what the parent said against names and aliases; "telma", "BP ki dawai" and "white tablet" all
+// Matches what the parent said against names, looks and aliases; "telma", "BP ki dawai" and "white oval" all
 // resolve, and an unclear phrase returns every candidate so the assistant can ask instead of guessing.
 export function findMedicines(state: State, spoken: string): Medicine[] {
     const said = normalise(spoken);
@@ -53,7 +53,7 @@ export function findMedicines(state: State, spoken: string): Medicine[] {
         return exact;
     }
     return state.medicines.filter((m) =>
-        [m.name, ...m.aliases].some((n) => {
+        [m.name, m.looks, ...m.aliases].some((n) => {
             const name = normalise(n);
             return said.includes(name) || name.includes(said);
         }),
@@ -130,6 +130,12 @@ export function refillStatus(state: State): RefillLine[] {
             return {medicine, dosesPerDay, daysLeft, low: daysLeft <= LOW_STOCK_DAYS};
         })
         .sort((a, b) => a.daysLeft - b.daysLeft);
+}
+
+// A refill already confirmed for this medicine in the last 24 hours, so a second order is not placed by mistake.
+export function recentOrder(state: State, medicine: Medicine, now: Date): Order | undefined {
+    return state.orders.find((o) => o.medicineId === medicine.id && o.status === "confirmed" && o.confirmedAt !== undefined &&
+        now.getTime() - new Date(o.confirmedAt).getTime() < 86_400_000);
 }
 
 export function prepareOrder(state: State, medicine: Medicine, strips: number, now: Date): Order {

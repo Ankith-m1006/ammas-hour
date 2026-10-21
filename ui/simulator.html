@@ -1,1 +1,310 @@
-<!doctype html><title>sim</title>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Amma's Hour: Alexa+ simulator</title>
+<style>
+  :root {
+    --bg: #f6f1ea; --ink: #2b2118; --muted: #7a6a5c; --line: #e4d8c7; --card: #fffdf9;
+    --alexa: #1fb6ff; --accent: #b4541a; --ok: #2f7d4f; --flag: #c0392b;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Segoe UI", system-ui, sans-serif; background: var(--bg); color: var(--ink); }
+  header { display: flex; align-items: baseline; gap: 14px; padding: 18px 28px 6px; }
+  header h1 { margin: 0; font-size: 22px; letter-spacing: .2px; }
+  header .tag { color: var(--muted); font-size: 14px; }
+  main { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 22px; padding: 12px 28px 28px; align-items: start; }
+
+  /* Echo Show 10-style frame */
+  .device { background: #1d1d1f; border-radius: 26px; padding: 18px; box-shadow: 0 18px 40px rgba(43,33,24,.18); }
+  .device.small { max-width: 640px; }
+  .screen { position: relative; background: linear-gradient(160deg, #23324a, #18202e); border-radius: 12px; aspect-ratio: 16 / 10; overflow: hidden; color: #f4f1ec; display: flex; flex-direction: column; }
+  .status { display: flex; justify-content: space-between; padding: 14px 22px 0; font-size: 15px; opacity: .85; }
+  .reply { padding: 18px 26px 6px; font-size: 24px; line-height: 1.35; min-height: 74px; }
+  .reply .heard { display: block; font-size: 15px; opacity: .7; margin-bottom: 6px; font-style: italic; }
+  .app { flex: 1; margin: 6px 22px 16px; border-radius: 12px; overflow: hidden; display: none; background: #fff9f0; }
+  .app iframe { width: 100%; height: 100%; border: 0; display: block; }
+  .ring { position: absolute; left: 0; right: 0; bottom: 0; height: 6px; background: transparent; transition: background .2s; }
+  .ring.listening { background: linear-gradient(90deg, #0a6fd6, var(--alexa), #0a6fd6); animation: pulse 1.1s infinite; }
+  .ring.thinking { background: linear-gradient(90deg, var(--alexa), #9be3ff); }
+  @keyframes pulse { 50% { opacity: .45; } }
+
+  .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 16px; }
+  button { font: inherit; border: 1px solid var(--line); background: var(--card); color: var(--ink); border-radius: 999px; padding: 9px 16px; cursor: pointer; }
+  button:hover { border-color: #cbb79e; }
+  button.primary { background: var(--alexa); border-color: var(--alexa); color: #fff; font-weight: 600; padding: 11px 22px; }
+  button:disabled { opacity: .5; cursor: default; }
+  .lang button.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+  form { display: flex; gap: 8px; flex: 1; min-width: 260px; }
+  input[type=text] { flex: 1; font: inherit; padding: 10px 14px; border-radius: 999px; border: 1px solid var(--line); background: #fff; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .chips button { font-size: 13px; padding: 6px 12px; }
+
+  aside { display: grid; gap: 16px; min-width: 0; }
+  section { min-width: 0; }
+  .panel { min-width: 0; overflow: hidden; background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 14px 16px; }
+  .panel h2 { margin: 0 0 10px; font-size: 15px; letter-spacing: .3px; text-transform: uppercase; color: var(--muted); }
+  .phone { background: #fbfaf8; border-radius: 22px; border: 1px solid var(--line); padding: 10px; min-height: 120px; }
+  .notif { background: #fff; border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 12px; padding: 9px 11px; margin-bottom: 8px; font-size: 14px; overflow-wrap: anywhere; animation: drop .3s ease-out; }
+  .notif.flag { border-left-color: var(--flag); }
+  .notif.order { border-left-color: var(--ok); }
+  .notif small { display: block; color: var(--muted); margin-top: 3px; }
+  @keyframes drop { from { transform: translateY(-6px); opacity: 0; } }
+  .empty { color: var(--muted); font-size: 14px; padding: 6px 4px; }
+  .log { font-family: Consolas, "Cascadia Mono", monospace; font-size: 12px; max-height: 260px; overflow: auto; line-height: 1.5; }
+  .log div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .log .out { color: #0a6fd6; } .log .in { color: var(--ok); } .log .err { color: var(--flag); }
+  .meta { font-size: 13px; color: var(--muted); line-height: 1.5; }
+  @media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Amma's Hour</h1>
+  <span class="tag">Alexa+ add-on simulator · real MCP client (Streamable HTTP, 2025-11-25)</span>
+</header>
+<main>
+  <section>
+    <div class="device" id="device">
+      <div class="screen">
+        <div class="status"><span id="clock">--:--</span><span id="who">Kamala Devi · Mysuru</span></div>
+        <div class="reply" id="reply"><span class="heard"></span>Say "Alexa" and ask which medicines to take.</div>
+        <div class="app" id="app"></div>
+        <div class="ring" id="ring"></div>
+      </div>
+    </div>
+    <div class="controls">
+      <button class="primary" id="talk">● Alexa</button>
+      <span class="lang"><button data-lang="hi-IN" class="on">हिंदी</button> <button data-lang="en-IN">English</button></span>
+      <button id="size" title="Switch between Echo Show 10 and Echo Show 5 sizes">Echo Show 5</button>
+      <form id="typed"><input type="text" id="text" placeholder="Or type what you'd say…" autocomplete="off"><button>Send</button></form>
+    </div>
+    <div class="chips" id="chips"></div>
+  </section>
+  <aside>
+    <div class="panel">
+      <h2>Ravi's phone (son, Bengaluru)</h2>
+      <div class="phone" id="phone"><div class="empty">No messages yet.</div></div>
+    </div>
+    <div class="panel">
+      <h2>MCP traffic</h2>
+      <div class="log" id="log"></div>
+    </div>
+    <div class="panel meta" id="meta">Connecting…</div>
+    <button id="reset">Reset demo data</button>
+  </aside>
+</main>
+<script>
+const MCP_URL = "/mcp";
+const MCP_APP_MIME = "text/html;profile=mcp-app";
+const $ = (id) => document.getElementById(id);
+let sessionId = null, protocolVersion = null, nextId = 1, tools = [], lang = "hi-IN";
+const context = {};
+const seenNotifs = new Set();
+
+// ---------- MCP client over Streamable HTTP ----------
+function log(cls, text) {
+  const row = document.createElement("div");
+  row.className = cls; row.textContent = text; row.title = text;
+  $("log").prepend(row);
+}
+
+async function mcp(method, params, isNotification = false) {
+  const message = { jsonrpc: "2.0", method, ...(params ? { params } : {}) };
+  if (!isNotification) message.id = nextId++;
+  const headers = { "Content-Type": "application/json", "Accept": "application/json, text/event-stream" };
+  if (sessionId) headers["Mcp-Session-Id"] = sessionId;
+  if (protocolVersion) headers["Mcp-Protocol-Version"] = protocolVersion;
+  log("out", `→ ${method} ${params ? JSON.stringify(params).slice(0, 120) : ""}`);
+  const response = await fetch(MCP_URL, { method: "POST", headers, body: JSON.stringify(message) });
+  const sid = response.headers.get("mcp-session-id");
+  if (sid) sessionId = sid;
+  if (isNotification) return null;
+  const type = response.headers.get("content-type") || "";
+  let reply;
+  if (type.includes("text/event-stream")) {
+    const text = await response.text();
+    const events = text.split(/\n\n/).map((block) => block.split("\n").filter((l) => l.startsWith("data:")).map((l) => l.slice(5).trim()).join("")).filter(Boolean).map((d) => JSON.parse(d));
+    reply = events.find((e) => e.id === message.id);
+  } else {
+    reply = await response.json();
+  }
+  if (!reply) throw new Error(`No reply to ${method}`);
+  if (reply.error) { log("err", `← ${method} error ${reply.error.message}`); throw new Error(reply.error.message); }
+  log("in", `← ${method} ${JSON.stringify(reply.result).slice(0, 120)}`);
+  return reply.result;
+}
+
+async function connect() {
+  const init = await mcp("initialize", {
+    protocolVersion: "2025-11-25",
+    capabilities: { extensions: { "io.modelcontextprotocol/ui": { mimeTypes: [MCP_APP_MIME] } } },
+    clientInfo: { name: "ammas-hour-echo-show-simulator", version: "0.1.0" },
+  });
+  protocolVersion = init.protocolVersion;
+  await mcp("notifications/initialized", undefined, true);
+  tools = (await mcp("tools/list", {})).tools;
+  $("meta").innerHTML = `Connected to <b>${init.serverInfo.title || init.serverInfo.name}</b> · protocol ${init.protocolVersion} · session ${sessionId.slice(0, 8)}… · ${tools.length} tools`;
+}
+
+// ---------- MCP Apps host (SEP-1865) ----------
+async function showApp(resourceUri, toolResult) {
+  const res = await mcp("resources/read", { uri: resourceUri });
+  const content = res.contents.find((c) => c.mimeType === MCP_APP_MIME);
+  if (!content) return;
+  const box = $("app");
+  box.innerHTML = "";
+  box.style.display = "block";
+  const frame = document.createElement("iframe");
+  frame.setAttribute("sandbox", "allow-scripts");
+  frame.srcdoc = content.text;
+  box.appendChild(frame);
+  const onMessage = (event) => {
+    if (event.source !== frame.contentWindow) return;
+    const msg = event.data;
+    if (msg?.method === "ui/initialize") {
+      frame.contentWindow.postMessage({ jsonrpc: "2.0", id: msg.id, result: {
+        protocolVersion: "2026-01-26",
+        hostInfo: { name: "ammas-hour-echo-show-simulator", version: "0.1.0" },
+        hostCapabilities: {},
+        hostContext: { theme: "light", displayMode: $("device").classList.contains("small") ? "inline" : "fullscreen", locale: lang },
+      } }, "*");
+    } else if (msg?.method === "ui/notifications/initialized") {
+      frame.contentWindow.postMessage({ jsonrpc: "2.0", method: "ui/notifications/tool-result", params: toolResult }, "*");
+    }
+  };
+  window.addEventListener("message", onMessage);
+}
+
+// ---------- Voice ----------
+function speak(text) {
+  return new Promise((resolve) => {
+    if (!("speechSynthesis" in window)) return resolve();
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = lang;
+    const voice = speechSynthesis.getVoices().find((v) => v.lang === lang) || speechSynthesis.getVoices().find((v) => v.lang.startsWith("en-IN"));
+    if (voice) u.voice = voice;
+    u.rate = 0.95;
+    u.onend = resolve; u.onerror = resolve;
+    speechSynthesis.speak(u);
+  });
+}
+
+function listen() {
+  const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!Recognition) { $("text").focus(); setReply("", "Voice input isn't available in this browser. Type instead."); return; }
+  const rec = new Recognition();
+  rec.lang = lang; rec.interimResults = false; rec.maxAlternatives = 1;
+  $("ring").className = "ring listening";
+  rec.onresult = (e) => handle(e.results[0][0].transcript);
+  rec.onerror = () => { $("ring").className = "ring"; };
+  rec.onend = () => { if ($("ring").className.includes("listening")) $("ring").className = "ring"; };
+  rec.start();
+}
+
+function setReply(heard, text) {
+  $("reply").innerHTML = `<span class="heard">${heard ? `“${escapeHtml(heard)}”` : ""}</span>${escapeHtml(text)}`;
+}
+function escapeHtml(t) { return String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+
+// ---------- One turn: plan -> tools/call -> speak -> cards ----------
+async function handle(utterance) {
+  if (!utterance.trim()) return;
+  $("ring").className = "ring thinking";
+  setReply(utterance, "…");
+  $("app").style.display = "none";
+  try {
+    // Requirement 2.6: say "one moment" when a turn takes longer than 1.5 s.
+    const interim = setTimeout(() => { setReply(utterance, "One moment…"); speak("One moment."); }, 1500);
+    const plan = await (await fetch("/brain", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ utterance, tools, context }) })).json();
+    if (plan.reset) Object.keys(context).forEach((k) => delete context[k]);
+    log("", `brain (${plan.via}): ${plan.calls.map((c) => c.name).join(", ") || "no tool"}`);
+    const spoken = [];
+    let card = null;
+    for (const call of plan.calls) {
+      const result = await mcp("tools/call", { name: call.name, arguments: call.arguments });
+      spoken.push(result.content.filter((c) => c.type === "text").map((c) => c.text).join(" "));
+      remember(call, result);
+      const uri = tools.find((t) => t.name === call.name)?._meta?.ui?.resourceUri;
+      if (uri) card = { uri, result };
+    }
+    clearTimeout(interim);
+    const text = spoken.join(" ") || plan.say || "Okay.";
+    setReply(utterance, text);
+    if (card) await showApp(card.uri, card.result);
+    $("ring").className = "ring";
+    refreshPhone();
+    await speak(text);
+  } catch (error) {
+    setReply(utterance, `Something went wrong: ${error.message}`);
+    $("ring").className = "ring";
+  }
+}
+
+function remember(call, result) {
+  context.lastTool = call.name;
+  const s = result.structuredContent || {};
+  if (call.name === "get_due_doses") { context.dueMedicines = (s.doses || []).filter((d) => !d.taken).map((d) => d.name); context.dueSlot = s.slot; }
+  if (call.name === "prepare_refill_order" && s.orderId) context.pendingOrderId = s.orderId;
+  if (call.name === "confirm_order") delete context.pendingOrderId;
+}
+
+// ---------- Family phone (reads the demo state; in production these are SMS/email) ----------
+async function refreshPhone() {
+  const state = await (await fetch("/demo/state")).json();
+  const items = [
+    ...state.alerts.map((a) => ({ key: "a" + a.at, cls: "flag", at: a.at, text: `⚠ ${a.message}` })),
+    ...state.orders.filter((o) => o.status === "confirmed").map((o) => {
+      const m = state.medicines.find((x) => x.id === o.medicineId);
+      return { key: "o" + o.id, cls: "order", at: o.confirmedAt, text: `🧾 Receipt: ${m.name}, ${o.strips} strip(s), ₹${o.total}, ordered by Amma.` };
+    }),
+  ].sort((a, b) => b.at.localeCompare(a.at));
+  if (items.length === 0) { $("phone").innerHTML = '<div class="empty">No messages yet.</div>'; return; }
+  $("phone").innerHTML = items.map((n) => `<div class="notif ${n.cls}">${escapeHtml(n.text)}<small>${new Date(n.at).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</small></div>`).join("");
+  const fresh = items.filter((n) => !seenNotifs.has(n.key));
+  fresh.forEach((n) => seenNotifs.add(n.key));
+  if (fresh.length && navigator.vibrate) navigator.vibrate(150);
+}
+
+// ---------- Wiring ----------
+const CHIPS = {
+  "hi-IN": ["Subah ki dawai kaunsi hai?", "Le li", "Thoda chakkar aa raha hai", "Kaunsi dawai khatam ho rahi hai?", "Telma mangwa do", "Haan, order karo", "Amma ka hafta kaisa raha?"],
+  "en-IN": ["Which medicines do I take this morning?", "I took them", "I feel a bit dizzy", "Which medicines are running out?", "Order Telma", "Yes, order it", "How is Amma doing this week?"],
+};
+function renderChips() {
+  $("chips").innerHTML = "";
+  for (const text of CHIPS[lang]) {
+    const b = document.createElement("button");
+    b.textContent = text; b.onclick = () => handle(text);
+    $("chips").appendChild(b);
+  }
+}
+document.querySelectorAll(".lang button").forEach((b) => b.onclick = () => {
+  lang = b.dataset.lang;
+  document.querySelectorAll(".lang button").forEach((x) => x.classList.toggle("on", x === b));
+  renderChips();
+});
+$("talk").onclick = listen;
+$("typed").onsubmit = (e) => { e.preventDefault(); const t = $("text").value; $("text").value = ""; handle(t); };
+$("size").onclick = () => {
+  const small = $("device").classList.toggle("small");
+  $("size").textContent = small ? "Echo Show 10" : "Echo Show 5";
+};
+$("reset").onclick = async () => {
+  await fetch("/demo/reset", { method: "POST" });
+  seenNotifs.clear();
+  Object.keys(context).forEach((k) => delete context[k]);
+  $("app").style.display = "none";
+  setReply("", "Demo data reset.");
+  refreshPhone();
+};
+setInterval(() => { $("clock").textContent = new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Kolkata" }); }, 1000);
+speechSynthesis?.getVoices();
+renderChips();
+connect().then(refreshPhone).catch((e) => { $("meta").textContent = `Could not connect: ${e.message}`; });
+</script>
+</body>
+</html>

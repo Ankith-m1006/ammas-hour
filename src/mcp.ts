@@ -4,7 +4,7 @@ import {readFileSync} from "node:fs";
 import {McpServer} from "@modelcontextprotocol/sdk/server/mcp.js";
 import type {CallToolResult} from "@modelcontextprotocol/sdk/types.js";
 import {z} from "zod";
-import {checkIn, confirmOrder, currentSlot, dueDoses, findMedicines, logDose, prepareOrder, refillStatus, weeklySummary} from "./care.ts";
+import {checkIn, confirmOrder, currentSlot, dueDoses, findMedicines, istParts, logDose, prepareOrder, recentOrder, refillStatus, weeklySummary} from "./care.ts";
 import type {Slot} from "./store.ts";
 import {Store} from "./store.ts";
 
@@ -92,7 +92,10 @@ export function createMcpServer(store: Store, clock: () => Date = () => new Date
                 "Records that the parent took a medicine, e.g. 'le li', 'I took Telma', 'BP ki dawai le li'. " +
                 "Catches a second dose of the same medicine in the same part of the day and says so instead of logging it twice.",
             inputSchema: {
-                medicine: z.string().min(1).describe("The medicine as the parent said it: brand, generic, colour or a Hindi phrase."),
+                medicine: z.string().min(1).describe(
+                    "The medicine as the parent said it: brand (Telma), generic (telmisartan), colour ('white tablet') " +
+                    "or a Hindi phrase ('BP ki dawai', 'sugar ki dawai', 'gulabi goli').",
+                ),
                 slot: slotSchema.optional().describe("Part of the day; defaults to the current one."),
             },
             annotations: {readOnlyHint: false, idempotentHint: true, openWorldHint: false},
@@ -173,7 +176,7 @@ export function createMcpServer(store: Store, clock: () => Date = () => new Date
                 "Prepares a refill order and reads out the price. Nothing is ordered until the parent clearly says yes " +
                 "and confirm_order is called with that answer.",
             inputSchema: {
-                medicine: z.string().min(1).describe("The medicine to refill, as the parent said it."),
+                medicine: z.string().min(1).describe("The medicine to refill, as the parent said it: brand, generic, colour or Hindi name."),
                 strips: z.number().int().min(1).max(5).optional().describe("Number of strips, 1 to 5; defaults to 1."),
             },
             annotations: {readOnlyHint: false, idempotentHint: true, openWorldHint: false},
@@ -185,11 +188,19 @@ export function createMcpServer(store: Store, clock: () => Date = () => new Date
                     ? sayError(`I couldn't find "${medicine}" in her medicine list.`)
                     : say(`Which one should I refill: ${joinSpoken(matches.slice(0, 5).map((m) => m.name))}?`, {status: "ambiguous"});
             }
+            const recent = recentOrder(state, matches[0], clock());
+            if (recent) {
+                return say(
+                    `${matches[0].name} was already ordered today at ${istParts(new Date(recent.confirmedAt!)).time}, so I won't order it again. ` +
+                    "Do you want to change that order instead?",
+                    {status: "already_ordered", medicine: matches[0].name},
+                );
+            }
             const order = prepareOrder(state, matches[0], strips ?? 1, clock());
             store.save();
             return say(
-                `${order.strips} ${order.strips === 1 ? "strip" : "strips"} of ${matches[0].name}, ${order.strips * matches[0].stripSize} tablets, ` +
-                `for ${order.total} rupees, delivered by the pharmacy tomorrow. Should I place the order?`,
+                `${order.strips} ${order.strips === 1 ? "strip" : "strips"} of ${matches[0].name}, ${order.strips * matches[0].stripSize} tablets: ` +
+                `${order.total} rupees including GST, delivery free, total ${order.total} rupees, paid on delivery. Should I place the order?`,
                 {orderId: order.id, medicine: matches[0].name, strips: order.strips, total: order.total, currency: "INR", status: order.status},
             );
         },
@@ -223,6 +234,20 @@ export function createMcpServer(store: Store, clock: () => Date = () => new Date
                     orderId: result.order.id, status: "confirmed", total: result.order.total,
                 });
         },
+    );
+
+    server.registerTool(
+        "get_help",
+        {
+            title: "What can you do?",
+            description: "Says what Amma's Hour can do, with a few example phrases. Use for 'what can you do?', 'help', 'aap kya kar sakti ho?'.",
+            annotations: {readOnlyHint: true, openWorldHint: false},
+        },
+        async () => say(
+            `I help ${state.parent.calledAs} with her medicines and keep ${joinSpoken(state.family.map((f) => f.name))} informed. ` +
+            "You can ask which medicines to take now, tell me when you've taken them, tell me how you feel, " +
+            "ask which medicines are running out, or order a refill. Family can ask how her week went.",
+        ),
     );
 
     server.registerTool(
