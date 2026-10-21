@@ -1,0 +1,19 @@
+{
+  "name": "ammas-hour",
+  "version": "0.1.0",
+  "description": "Amma's Hour: an Alexa+ add-on (self-hosted MCP server) that helps parents who live alone take their medicines, check in daily and refill on time, and keeps their children in the loop.",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "start": "node src/server.ts",
+    "test": "node --test test/"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/ext-apps": "^2.0.3",
+    "@modelcontextprotocol/sdk": "^1.32.1",
+    "zod": "^4.6.7"
+  }
+}
