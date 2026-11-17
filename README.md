@@ -1,5 +1,7 @@
 # Amma's Hour
 
+**Live demo (Alexa+ simulator, real MCP server):** https://inquiry-measured-string-reviewing.trycloudflare.com (moved to AWS on 18 Nov 2026 after the Google Cloud billing lapse)
+
 **An Alexa+ add-on for parents who live alone.** Amma's Hour tells an elderly parent which medicines to take, in Hindi or English, catches a double dose before it happens, asks how they feel and alerts the family on warning signs, and refills medicines with a clear "yes". Their son or daughter, living in another city, asks "How is Amma doing this week?" and gets the answer.
 
 Built for the **Alexa+ track** of Amazon's *Build, Ship, Shape* hackathon as a **self-hosted MCP server** implementing **MCP spec 2025-11-25 over Streamable HTTP**, with **MCP Apps** cards for Echo Show and an **Agent Skill**.
